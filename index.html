@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Drum Kit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .loading-screen.hidden {
+            display: none;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 4rem;
+            height: 4rem;
+            border: 4px solid #3b82f6;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.125rem;
+        }
+
+        /* Main Container */
+        .main-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+        }
+
+        .drum-container {
+            position: relative;
+            width: 100%;
+            min-width: 360px;
+            max-width: 360px;
+            height: auto;
+            aspect-ratio: 1300/825;
+        }
+
+        @media (min-width: 768px) {
+            .drum-container {
+                min-width: 800px;
+                max-width: 800px;
+            }
+        }
+
+        /* Background Image */
+        .drum-kit-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('./assets/drum/images/drum-kit.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .drum-kit-bg.visible {
+            opacity: 1;
+        }
+
+        /* Drum Elements Container */
+        .drum-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Cymbal Animation */
+        .cymbal-animation {
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .cymbal-animation img {
+            width: 68px;
+        }
+
+        @media (min-width: 768px) {
+            .cymbal-animation img {
+                width: 150px;
+            }
+        }
+
+        .cymbal-animation.cymbal-hit {
+            transform: rotate(5deg);
+        }
+
+        .cymbal-animation.cymbal-sway {
+            animation: sway 0.4s ease-out;
+        }
+
+        @keyframes sway {
+            0% { transform: rotate(5deg); }
+            50% { transform: rotate(-2deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* Crash Cymbal 1 */
+        .crash1 {
+            position: absolute;
+            top: 11px;
+            left: 63px;
+        }
+
+        @media (min-width: 768px) {
+            .crash1 {
+                top: 25px;
+                left: 140px;
+            }
+        }
+
+        /* Ride Cymbal */
+        .ride {
+            position: absolute;
+            top: 20px;
+            right: 34px;
+        }
+
+        @media (min-width: 768px) {
+            .ride {
+                top: 45px;
+                right: 75px;
+            }
+        }
+
+        /* Hi-Hat */
+        .hihat {
+            position: absolute;
+            top: 22px;
+            left: 0px;
+        }
+
+        .hihat img {
+            width: 72px;
+        }
+
+        @media (min-width: 768px) {
+            .hihat {
+                top: 48px;
+                left: 0px;
+            }
+            .hihat img {
+                width: 160px;
+            }
+        }
+
+        /* Invisible Hitboxes */
+        .invisible-hitbox {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .invisible-hitbox.drum-hit {
+            transform: scale(0.95);
+        }
+
+        /* Bass Drum */
+        .bass-drum {
+            border-radius: 50%;
+            top: 86px;
+            left: 110px;
+            width: 113px;
+            height: 113px;
+        }
+
+        @media (min-width: 768px) {
+            .bass-drum {
+                top: 190px;
+                left: 245px;
+                width: 250px;
+                height: 250px;
+            }
+        }
+
+        /* Snare Drum */
+        .snare-drum {
+            border-radius: 50%;
+            top: 65px;
+            left: 45px;
+            width: 54px;
+            height: 59px;
+        }
+
+        @media (min-width: 768px) {
+            .snare-drum {
+                top: 143px;
+                left: 100px;
+                width: 120px;
+                height: 130px;
+            }
+        }
+
+        /* Tom 1 */
+        .tom1 {
+            top: 41px;
+            left: 119px;
+            width: 41px;
+            height: 45px;
+        }
+
+        @media (min-width: 768px) {
+            .tom1 {
+                top: 90px;
+                left: 264px;
+                width: 90px;
+                height: 100px;
+            }
+        }
+
+        /* Tom 2 */
+        .tom2 {
+            top: 41px;
+            right: 133px;
+            width: 54px;
+            height: 45px;
+        }
+
+        @media (min-width: 768px) {
+            .tom2 {
+                top: 90px;
+                right: 295px;
+                width: 120px;
+                height: 100px;
+            }
+        }
+
+        /* Floor Tom */
+        .floor-tom {
+            top: 68px;
+            right: 57px;
+            width: 70px;
+            height: 81px;
+        }
+
+        @media (min-width: 768px) {
+            .floor-tom {
+                top: 150px;
+                right: 127px;
+                width: 155px;
+                height: 180px;
+            }
+        }
+
+        /* Hi-Hat Open */
+        .hihat-open {
+            top: 36px;
+            left: 27px;
+            width: 45px;
+            height: 18px;
+        }
+
+        @media (min-width: 768px) {
+            .hihat-open {
+                top: 80px;
+                left: 60px;
+                width: 100px;
+                height: 40px;
+            }
+        }
+
+        /* Hi-Hat Foot */
+        .hihat-foot {
+            bottom: 23px;
+            left: 32px;
+            width: 36px;
+            height: 23px;
+        }
+
+        @media (min-width: 768px) {
+            .hihat-foot {
+                bottom: 50px;
+                left: 70px;
+                width: 80px;
+                height: 50px;
+            }
+        }
+
+        /* Snare Stick */
+        .snare-stick {
+            top: 72px;
+            left: 101px;
+            width: 18px;
+            height: 45px;
+        }
+
+        @media (min-width: 768px) {
+            .snare-stick {
+                top: 160px;
+                left: 225px;
+                width: 40px;
+                height: 100px;
+            }
+        }
+
+        /* Key Indicators */
+        .key-indicator {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 12px;
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        .key-indicator.key-pressed {
+            background: #3b82f6;
+            color: white;
+            transform: scale(1.2);
+        }
+
+        /* Key indicator positions for crash1 */
+        .crash1 .key-indicator {
+            top: 9px;
+            left: 22px;
+        }
+
+        @media (min-width: 768px) {
+            .crash1 .key-indicator {
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Key indicator positions for ride */
+        .ride .key-indicator {
+            top: 20px;
+            right: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .ride .key-indicator {
+                top: 45px;
+                right: 45px;
+            }
+        }
+
+        /* Key indicator positions for hihat */
+        .hihat .key-indicator {
+            top: 18px;
+            left: 18px;
+        }
+
+        @media (min-width: 768px) {
+            .hihat .key-indicator {
+                top: 40px;
+                left: 40px;
+            }
+        }
+
+        /* Key indicator positions for bass */
+        .bass-drum .key-indicator {
+            top: 45px;
+            left: 52px;
+        }
+
+        @media (min-width: 768px) {
+            .bass-drum .key-indicator {
+                top: 100px;
+                left: 115px;
+            }
+        }
+
+        /* Key indicator positions for snare */
+        .snare-drum .key-indicator {
+            top: 14px;
+            left: 27px;
+        }
+
+        @media (min-width: 768px) {
+            .snare-drum .key-indicator {
+                top: 30px;
+                left: 60px;
+            }
+        }
+
+        /* Key indicator positions for tom1 */
+        .tom1 .key-indicator {
+            top: 0px;
+            left: 14px;
+        }
+
+        @media (min-width: 768px) {
+            .tom1 .key-indicator {
+                top: 0px;
+                left: 30px;
+            }
+        }
+
+        /* Key indicator positions for tom2 */
+        .tom2 .key-indicator {
+            top: 0px;
+            right: 18px;
+        }
+
+        @media (min-width: 768px) {
+            .tom2 .key-indicator {
+                top: 0px;
+                right: 40px;
+            }
+        }
+
+        /* Key indicator positions for floor tom */
+        .floor-tom .key-indicator {
+            top: 9px;
+            right: 32px;
+        }
+
+        @media (min-width: 768px) {
+            .floor-tom .key-indicator {
+                top: 20px;
+                right: 70px;
+            }
+        }
+
+        /* Key indicator positions for hihat open */
+        .hihat-open .key-indicator {
+            top: 7px;
+            left: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .hihat-open .key-indicator {
+                top: 15px;
+                left: 35px;
+            }
+        }
+
+        /* Key indicator positions for hihat foot */
+        .hihat-foot .key-indicator {
+            top: 5px;
+            left: 11px;
+        }
+
+        @media (min-width: 768px) {
+            .hihat-foot .key-indicator {
+                top: 10px;
+                left: 25px;
+            }
+        }
+
+        /* Key indicator positions for snare stick */
+        .snare-stick .key-indicator {
+            top: 2px;
+            left: 2px;
+        }
+
+        @media (min-width: 768px) {
+            .snare-stick .key-indicator {
+                top: 5px;
+                left: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p class="loading-text">Loading drum kit... <span id="loadingProgress">0</span>%</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="drum-container">
+            <!-- Background Image -->
+            <div id="drumKitBg" class="drum-kit-bg"></div>
+            
+            <!-- Drum Elements Container -->
+            <div id="drumElements" class="drum-elements" style="display: none;">
+                <!-- Crash Cymbal 1 (Left) -->
+                <div class="cymbal-animation crash1" id="crash1" data-key="y">
+                    <img src="./assets/drum/images/crash1.png" alt="Crash 1">
+                    <div class="key-indicator" id="key-y">Y</div>
+                </div>
+                
+                <!-- Ride Cymbal -->
+                <div class="cymbal-animation ride" id="ride" data-key="u">
+                    <img src="./assets/drum/images/ride.png" alt="Ride">
+                    <div class="key-indicator" id="key-u">U</div>
+                </div>
+
+                <!-- Hi-Hat -->
+                <div class="cymbal-animation hihat" id="hihat" data-key="r">
+                    <img src="./assets/drum/images/hihat.png" alt="Hi-Hat">
+                    <div class="key-indicator" id="key-r">R</div>
+                </div>
+
+                <!-- Bass Drum -->
+                <div class="invisible-hitbox bass-drum" data-key="x">
+                    <div class="key-indicator" id="key-x">X</div>
+                </div>
+                
+                <!-- Snare Drum -->
+                <div class="invisible-hitbox snare-drum" data-key="s">
+                    <div class="key-indicator" id="key-s">S</div>
+                </div>
+                
+                <!-- Tom 1 -->
+                <div class="invisible-hitbox tom1" data-key="g">
+                    <div class="key-indicator" id="key-g">G</div>
+                </div>
+                
+                <!-- Tom 2 -->
+                <div class="invisible-hitbox tom2" data-key="h">
+                    <div class="key-indicator" id="key-h">H</div>
+                </div>
+                
+                <!-- Floor Tom -->
+                <div class="invisible-hitbox floor-tom" data-key="j">
+                    <div class="key-indicator" id="key-j">J</div>
+                </div>
+                
+                <!-- Hi-Hat Open -->
+                <div class="invisible-hitbox hihat-open" data-key="e">
+                    <div class="key-indicator" id="key-e">E</div>
+                </div>
+                
+                <!-- Hi-Hat Foot -->
+                <div class="invisible-hitbox hihat-foot" data-key="c">
+                    <div class="key-indicator" id="key-c">C</div>
+                </div>
+                
+                <!-- Snare Stick -->
+                <div class="invisible-hitbox snare-stick" data-key="d">
+                    <div class="key-indicator" id="key-d">D</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets//drum/js/main.js"></script>
+</body>
+</html>
